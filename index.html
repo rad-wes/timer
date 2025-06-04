@@ -131,20 +131,7 @@
             flex: 1;
         }
 
-        @keyframes pulse {
-            0%, 100% { 
-                opacity: 1; 
-                text-shadow: 0 0 30px rgba(255, 215, 0, 0.6);
-            }
-            50% { 
-                opacity: 0.7; 
-                text-shadow: 0 0 50px rgba(255, 215, 0, 0.8);
-            }
-        }
 
-        .timer-display.running {
-            animation: pulse 1s infinite;
-        }
 
         @keyframes redPulse {
             0%, 100% { 
@@ -272,14 +259,11 @@
             }
 
             async initWakeLock() {
-                // Zapobieganie wygaszaniu ekranu
+                // Wake Lock API będzie używany tylko gdy timer jest aktywny
                 if ('wakeLock' in navigator) {
-                    try {
-                        // Przy każdym starcie timera będziemy prosić o wake lock
-                        console.log('Wake Lock API dostępne');
-                    } catch (err) {
-                        console.log('Wake Lock niedostępny:', err);
-                    }
+                    console.log('Wake Lock API dostępne');
+                } else {
+                    console.log('Wake Lock API niedostępne');
                 }
             }
 
@@ -335,7 +319,7 @@
 
                 // Obsługa visibility change dla wake lock
                 document.addEventListener('visibilitychange', () => {
-                    if (this.wakeLock !== null && document.visibilityState === 'visible' && this.isRunning) {
+                    if (this.isRunning && this.wakeLock === null && document.visibilityState === 'visible') {
                         this.requestWakeLock();
                     }
                 });
@@ -368,7 +352,6 @@
                 }
                 
                 this.isRunning = true;
-                this.timerDisplay.classList.add('running');
                 this.startBtn.disabled = true;
                 this.pauseBtn.disabled = false;
                 this.clearFinishedState();
@@ -388,7 +371,6 @@
 
             pause() {
                 this.isRunning = false;
-                this.timerDisplay.classList.remove('running');
                 this.startBtn.disabled = false;
                 this.pauseBtn.disabled = true;
                 
@@ -435,9 +417,10 @@
 
             showNotification() {
                 this.notification.classList.add('show');
+                // Auto-ukrycie po 4 sekundach
                 setTimeout(() => {
                     this.notification.classList.remove('show');
-                }, 5000);
+                }, 4000);
             }
 
 
@@ -445,12 +428,13 @@
 
         // Inicjalizacja aplikacji
         window.addEventListener('DOMContentLoaded', () => {
-            new Timer();
+            window.timerInstance = new Timer();
         });
 
         // Zapobieganie zamknięciu karty podczas działania timera
         window.addEventListener('beforeunload', (e) => {
-            if (document.querySelector('.timer-display').classList.contains('running')) {
+            const timer = window.timerInstance;
+            if (timer && timer.isRunning) {
                 e.preventDefault();
                 e.returnValue = 'Timer jest aktywny. Czy na pewno chcesz zamknąć kartę?';
             }
