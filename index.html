@@ -1,0 +1,524 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Timer</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Courier New', monospace;
+            background: #000000;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            color: #FFD700;
+            overflow: hidden;
+        }
+
+        .container {
+            width: 100vw;
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            position: relative;
+        }
+
+        .timer-display {
+            font-size: clamp(8rem, 25vw, 35rem);
+            font-weight: bold;
+            color: #FFD700;
+            text-shadow: 0 0 30px rgba(255, 215, 0, 0.6);
+            margin: 0;
+            line-height: 0.8;
+            user-select: none;
+            letter-spacing: 0.1em;
+        }
+
+        .time-buttons {
+            position: fixed;
+            bottom: 120px;
+            left: 50%;
+            transform: translateX(-50%);
+            display: flex;
+            gap: 20px;
+            flex-wrap: wrap;
+            justify-content: center;
+            z-index: 10;
+        }
+
+        .time-btn {
+            background: rgba(255, 215, 0, 0.1);
+            border: 2px solid rgba(255, 215, 0, 0.3);
+            color: #FFD700;
+            padding: 12px 20px;
+            border-radius: 8px;
+            font-size: 1rem;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            font-family: 'Courier New', monospace;
+            min-width: 80px;
+        }
+
+        .time-btn:hover {
+            background: rgba(255, 215, 0, 0.2);
+            border-color: rgba(255, 215, 0, 0.6);
+            box-shadow: 0 0 15px rgba(255, 215, 0, 0.3);
+        }
+
+        .time-btn.active {
+            background: rgba(255, 215, 0, 0.3);
+            border-color: #FFD700;
+            box-shadow: 0 0 20px rgba(255, 215, 0, 0.5);
+        }
+
+        .control-buttons {
+            position: fixed;
+            bottom: 40px;
+            left: 50%;
+            transform: translateX(-50%);
+            display: flex;
+            gap: 20px;
+            z-index: 10;
+        }
+
+        .control-btn {
+            background: rgba(255, 215, 0, 0.1);
+            border: 2px solid rgba(255, 215, 0, 0.3);
+            color: #FFD700;
+            padding: 15px 30px;
+            border-radius: 8px;
+            font-size: 1.1rem;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            font-family: 'Courier New', monospace;
+            min-width: 100px;
+        }
+
+        .control-btn:hover {
+            background: rgba(255, 215, 0, 0.2);
+            border-color: rgba(255, 215, 0, 0.6);
+            box-shadow: 0 0 15px rgba(255, 215, 0, 0.3);
+        }
+
+        .control-btn:disabled {
+            opacity: 0.3;
+            cursor: not-allowed;
+            box-shadow: none;
+        }
+
+        .control-btn:disabled:hover {
+            background: rgba(255, 215, 0, 0.1);
+            border-color: rgba(255, 215, 0, 0.3);
+        }
+
+        .progress-ring {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: min(80vw, 80vh);
+            height: min(80vw, 80vh);
+            z-index: -1;
+            opacity: 0.3;
+        }
+
+        .progress-ring-circle {
+            stroke: #FFD700;
+            stroke-width: 3;
+            fill: transparent;
+            stroke-dasharray: 628.32;
+            stroke-dashoffset: 628.32;
+            transition: stroke-dashoffset 1s linear;
+            transform-origin: center;
+            transform: rotate(-90deg);
+        }
+
+        .timer-container {
+            position: relative;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            flex: 1;
+        }
+
+        @keyframes pulse {
+            0%, 100% { 
+                opacity: 1; 
+                text-shadow: 0 0 30px rgba(255, 215, 0, 0.6);
+            }
+            50% { 
+                opacity: 0.7; 
+                text-shadow: 0 0 50px rgba(255, 215, 0, 0.8);
+            }
+        }
+
+        .timer-display.running {
+            animation: pulse 1s infinite;
+        }
+
+        @keyframes redPulse {
+            0%, 100% { 
+                background-color: #000000;
+            }
+            50% { 
+                background-color: rgba(255, 0, 0, 0.3);
+            }
+        }
+
+        body.finished {
+            animation: redPulse 2s infinite;
+        }
+
+        .notification {
+            position: fixed;
+            top: 50px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: rgba(255, 0, 0, 0.9);
+            color: white;
+            padding: 20px 40px;
+            border-radius: 10px;
+            font-size: 1.5rem;
+            opacity: 0;
+            transition: opacity 0.5s ease;
+            z-index: 20;
+            font-family: 'Courier New', monospace;
+            font-weight: bold;
+        }
+
+        .notification.show {
+            opacity: 1;
+        }
+
+        .help-text {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            color: rgba(255, 215, 0, 0.5);
+            font-size: 0.9rem;
+            text-align: right;
+            z-index: 10;
+        }
+
+        @media (max-width: 768px) {
+            .timer-display {
+                font-size: clamp(4rem, 20vw, 8rem);
+            }
+            
+            .time-buttons {
+                bottom: 100px;
+                gap: 10px;
+            }
+            
+            .time-btn {
+                padding: 10px 15px;
+                font-size: 0.9rem;
+                min-width: 70px;
+            }
+            
+            .control-buttons {
+                bottom: 20px;
+                gap: 15px;
+            }
+            
+            .control-btn {
+                padding: 12px 20px;
+                font-size: 1rem;
+                min-width: 80px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="help-text">
+        SPACJA - start/pauza<br>
+        ESC - reset
+    </div>
+
+    <div class="container">
+        <div class="timer-container">
+            <svg class="progress-ring">
+                <circle class="progress-ring-circle" id="progressRing" 
+                        cx="50%" cy="50%" r="100"></circle>
+            </svg>
+            <div class="timer-display" id="timerDisplay">00:00</div>
+        </div>
+
+        <div class="time-buttons">
+            <button class="time-btn" data-minutes="10">10 min</button>
+            <button class="time-btn" data-minutes="15">15 min</button>
+            <button class="time-btn" data-minutes="20">20 min</button>
+            <button class="time-btn" data-minutes="30">30 min</button>
+            <button class="time-btn" data-minutes="60">60 min</button>
+        </div>
+
+        <div class="control-buttons">
+            <button class="control-btn start-btn" id="startBtn">START</button>
+            <button class="control-btn pause-btn" id="pauseBtn" disabled>PAUZA</button>
+            <button class="control-btn reset-btn" id="resetBtn">RESET</button>
+        </div>
+    </div>
+
+    <div class="notification" id="notification">
+        CZAS MINĄŁ! ⏰
+    </div>
+
+    <script>
+        class Timer {
+            constructor() {
+                this.timeLeft = 0;
+                this.totalTime = 0;
+                this.isRunning = false;
+                this.intervalId = null;
+                this.selectedMinutes = 10;
+                this.wakeLock = null;
+                
+                this.timerDisplay = document.getElementById('timerDisplay');
+                this.startBtn = document.getElementById('startBtn');
+                this.pauseBtn = document.getElementById('pauseBtn');
+                this.resetBtn = document.getElementById('resetBtn');
+                this.progressRing = document.getElementById('progressRing');
+                this.notification = document.getElementById('notification');
+                
+                this.bindEvents();
+                this.updateDisplay();
+                this.selectTimeButton(10);
+                this.initWakeLock();
+            }
+
+            async initWakeLock() {
+                // Zapobieganie wygaszaniu ekranu
+                if ('wakeLock' in navigator) {
+                    try {
+                        // Przy każdym starcie timera będziemy prosić o wake lock
+                        console.log('Wake Lock API dostępne');
+                    } catch (err) {
+                        console.log('Wake Lock niedostępny:', err);
+                    }
+                }
+            }
+
+            async requestWakeLock() {
+                if ('wakeLock' in navigator && !this.wakeLock) {
+                    try {
+                        this.wakeLock = await navigator.wakeLock.request('screen');
+                        console.log('Wake lock aktywny');
+                        
+                        this.wakeLock.addEventListener('release', () => {
+                            console.log('Wake lock zwolniony');
+                        });
+                    } catch (err) {
+                        console.log('Nie można uzyskać wake lock:', err);
+                    }
+                }
+            }
+
+            releaseWakeLock() {
+                if (this.wakeLock) {
+                    this.wakeLock.release();
+                    this.wakeLock = null;
+                }
+            }
+
+            bindEvents() {
+                // Przyciski czasu
+                document.querySelectorAll('.time-btn').forEach(btn => {
+                    btn.addEventListener('click', () => {
+                        const minutes = parseInt(btn.dataset.minutes);
+                        this.selectTime(minutes);
+                    });
+                });
+
+                // Przyciski kontrolne
+                this.startBtn.addEventListener('click', () => this.start());
+                this.pauseBtn.addEventListener('click', () => this.pause());
+                this.resetBtn.addEventListener('click', () => this.reset());
+
+                // Skróty klawiszowe
+                document.addEventListener('keydown', (e) => {
+                    if (e.code === 'Space') {
+                        e.preventDefault();
+                        if (this.isRunning) {
+                            this.pause();
+                        } else {
+                            this.start();
+                        }
+                    } else if (e.code === 'Escape') {
+                        this.reset();
+                    }
+                });
+
+                // Obsługa visibility change dla wake lock
+                document.addEventListener('visibilitychange', () => {
+                    if (this.wakeLock !== null && document.visibilityState === 'visible' && this.isRunning) {
+                        this.requestWakeLock();
+                    }
+                });
+            }
+
+            selectTime(minutes) {
+                if (this.isRunning) return;
+                
+                this.selectedMinutes = minutes;
+                this.timeLeft = minutes * 60;
+                this.totalTime = minutes * 60;
+                this.updateDisplay();
+                this.updateProgress();
+                this.selectTimeButton(minutes);
+                this.clearFinishedState();
+            }
+
+            selectTimeButton(minutes) {
+                document.querySelectorAll('.time-btn').forEach(btn => {
+                    btn.classList.remove('active');
+                    if (parseInt(btn.dataset.minutes) === minutes) {
+                        btn.classList.add('active');
+                    }
+                });
+            }
+
+            async start() {
+                if (this.timeLeft <= 0) {
+                    this.timeLeft = this.selectedMinutes * 60;
+                    this.totalTime = this.selectedMinutes * 60;
+                }
+                
+                this.isRunning = true;
+                this.timerDisplay.classList.add('running');
+                this.startBtn.disabled = true;
+                this.pauseBtn.disabled = false;
+                this.clearFinishedState();
+                
+                // Zapobieganie wygaszaniu ekranu
+                await this.requestWakeLock();
+                
+                this.intervalId = setInterval(() => {
+                    this.timeLeft--;
+                    this.updateDisplay();
+                    this.updateProgress();
+                    
+                    if (this.timeLeft <= 0) {
+                        this.finish();
+                    }
+                }, 1000);
+            }
+
+            pause() {
+                this.isRunning = false;
+                this.timerDisplay.classList.remove('running');
+                this.startBtn.disabled = false;
+                this.pauseBtn.disabled = true;
+                
+                // Zwolnienie wake lock
+                this.releaseWakeLock();
+                
+                if (this.intervalId) {
+                    clearInterval(this.intervalId);
+                    this.intervalId = null;
+                }
+            }
+
+            reset() {
+                this.pause();
+                this.timeLeft = this.selectedMinutes * 60;
+                this.totalTime = this.selectedMinutes * 60;
+                this.updateDisplay();
+                this.updateProgress();
+                this.clearFinishedState();
+            }
+
+            finish() {
+                this.pause();
+                this.timeLeft = 0; // Zatrzymanie na 00:00
+                this.updateDisplay();
+                this.updateProgress();
+                this.showNotification();
+                this.playSound();
+                
+                // Czerwone pulsowanie
+                document.body.classList.add('finished');
+            }
+
+            clearFinishedState() {
+                document.body.classList.remove('finished');
+                this.notification.classList.remove('show');
+            }
+
+            updateDisplay() {
+                const minutes = Math.floor(this.timeLeft / 60);
+                const seconds = this.timeLeft % 60;
+                this.timerDisplay.textContent = 
+                    `${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
+            }
+
+            updateProgress() {
+                const radius = 100;
+                const circumference = 2 * Math.PI * radius;
+                const progress = this.totalTime > 0 ? (this.totalTime - this.timeLeft) / this.totalTime : 0;
+                const offset = circumference - (progress * circumference);
+                
+                this.progressRing.style.strokeDasharray = circumference;
+                this.progressRing.style.strokeDashoffset = offset;
+            }
+
+            showNotification() {
+                this.notification.classList.add('show');
+                setTimeout(() => {
+                    this.notification.classList.remove('show');
+                }, 5000);
+            }
+
+            playSound() {
+                try {
+                    const audioContext = new (window.AudioContext || window.webkitAudioContext)();
+                    
+                    // Seria sygnałów dźwiękowych
+                    for (let i = 0; i < 3; i++) {
+                        setTimeout(() => {
+                            const oscillator = audioContext.createOscillator();
+                            const gainNode = audioContext.createGain();
+                            
+                            oscillator.connect(gainNode);
+                            gainNode.connect(audioContext.destination);
+                            
+                            oscillator.frequency.value = 800;
+                            oscillator.type = 'sine';
+                            
+                            gainNode.gain.setValueAtTime(0.3, audioContext.currentTime);
+                            gainNode.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + 0.5);
+                            
+                            oscillator.start(audioContext.currentTime);
+                            oscillator.stop(audioContext.currentTime + 0.5);
+                        }, i * 600);
+                    }
+                } catch (error) {
+                    console.log('Nie można odtworzyć dźwięku');
+                }
+            }
+        }
+
+        // Inicjalizacja aplikacji
+        window.addEventListener('DOMContentLoaded', () => {
+            new Timer();
+        });
+
+        // Zapobieganie zamknięciu karty podczas działania timera
+        window.addEventListener('beforeunload', (e) => {
+            if (document.querySelector('.timer-display').classList.contains('running')) {
+                e.preventDefault();
+                e.returnValue = 'Timer jest aktywny. Czy na pewno chcesz zamknąć kartę?';
+            }
+        });
+    </script>
+</body>
+</html>
