@@ -138,7 +138,7 @@
                 background-color: #000000;
             }
             50% { 
-                background-color: rgba(255, 0, 0, 1);
+                background-color: #ff0000;
             }
         }
 
@@ -218,7 +218,7 @@
         </div>
 
         <div class="time-buttons">
-            <button class="time-btn" data-minutes="10">10 min</button>
+            <button class="time-btn" data-minutes="1">1 min</button>
             <button class="time-btn" data-minutes="15">15 min</button>
             <button class="time-btn" data-minutes="18">18 min</button>
             <button class="time-btn" data-minutes="30">30 min</button>
@@ -347,8 +347,8 @@
 
             async start() {
                 if (this.timeLeft <= 0) {
-                    this.timeLeft = this.selectedMinutes * 60;
-                    this.totalTime = this.selectedMinutes * 60;
+                    this.timeLeft = this.selectedMinutes * ;
+                    this.totalTime = this.selectedMinutes * ;
                 }
                 
                 this.isRunning = true;
@@ -385,8 +385,8 @@
 
             reset() {
                 this.pause();
-                this.timeLeft = this.selectedMinutes * 60;
-                this.totalTime = this.selectedMinutes * 60;
+                this.timeLeft = this.selectedMinutes * ;
+                this.totalTime = this.selectedMinutes * ;
                 this.updateDisplay();
                 this.clearFinishedState();
             }
@@ -407,8 +407,8 @@
             }
 
             updateDisplay() {
-                const minutes = Math.floor(this.timeLeft / 60);
-                const seconds = this.timeLeft % 60;
+                const minutes = Math.floor(this.timeLeft / );
+                const seconds = this.timeLeft % ;
                 this.timerDisplay.textContent = 
                     `${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
             }
