@@ -218,7 +218,7 @@
         </div>
 
         <div class="time-buttons">
-            <button class="time-btn" data-minutes="10">10 min</button>
+            <button class="time-btn" data-minutes="1">1 min</button>
             <button class="time-btn" data-minutes="15">15 min</button>
             <button class="time-btn" data-minutes="18">18 min</button>
             <button class="time-btn" data-minutes="30">30 min</button>
@@ -243,7 +243,7 @@
                 this.totalTime = 0;
                 this.isRunning = false;
                 this.intervalId = null;
-                this.selectedMinutes = 10;
+                this.selectedMinutes = 1;
                 this.wakeLock = null;
                 
                 this.timerDisplay = document.getElementById('timerDisplay');
@@ -254,7 +254,7 @@
                 
                 this.bindEvents();
                 this.updateDisplay();
-                this.selectTimeButton(10);
+                this.selectTimeButton(1);
                 this.initWakeLock();
             }
 
